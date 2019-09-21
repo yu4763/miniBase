@@ -56,8 +56,9 @@
         <element name="testspecification" implicit="yes" />
         <sequential>
             <!-- timeout at 10.5 minutes, since TransactionTest is limited to 10 minutes. -->
-            <junit printsummary="on" fork="yes" timeout="630000" haltonfailure="@{haltonfailure}" maxmemory="128M" failureproperty="junit.failed">
-                <classpath refid="classpath.test" />
+            <junit printsummary="on" showoutput="yes" fork="true" timeout="630000" haltonfailure="@{haltonfailure}" maxmemory="128M" failureproperty="junit.failed">
+
+            	<classpath refid="classpath.test" />
                 <formatter type="plain" usefile="false"/>
                 <assertions><enable/></assertions>
                 <testspecification/>

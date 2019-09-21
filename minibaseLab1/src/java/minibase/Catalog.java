@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -19,6 +20,25 @@ public class Catalog {
     // TODO
     // hint1 : catalog class manages entire table info (DBFile dbFile, String name, String pkeyField), it will be easy if you manage thow infos in one class
     // hint2 : you need to get table info using table ID and you need to get table ID using table name. What data structure do you need?
+	
+	
+	public static class CatalogItem implements Serializable {
+
+		DbFile file; 
+		String name;
+		String pkeyField;
+		
+		public CatalogItem(DbFile f, String n, String p){
+			this.file = f;
+			this.name = n;
+			this.pkeyField = p;
+			
+		}
+	
+	}
+	
+	private Hashtable<Integer, CatalogItem> catalogTable;
+	private Hashtable<String, Integer> idTable;
 
     /**
      * Constructor.
@@ -26,6 +46,8 @@ public class Catalog {
      */
     public Catalog() {
         // TODO: some code goes here
+    	catalogTable = new Hashtable<Integer, CatalogItem>();
+    	idTable = new Hashtable<String, Integer>();
     }
 
     /**
@@ -39,6 +61,14 @@ public class Catalog {
      */
     public void addTable(DbFile file, String name, String pkeyField) {
         // TODO: some code goes here
+    	CatalogItem item = new CatalogItem(file, name, pkeyField);
+    	int id = file.getId();
+    	if(catalogTable.containsKey(id))
+    		return;
+    	catalogTable.put(id, item);
+    	if(name != null) {
+    		idTable.put(name, id);
+    	}
     }
 
     public void addTable(DbFile file, String name) {
@@ -62,7 +92,13 @@ public class Catalog {
      */
     public int getTableId(String name) throws NoSuchElementException {
         // TODO: some code goes here
-        return 0;
+    	if(name != null && idTable.containsKey(name)) {
+    		return idTable.get(name);
+    	}
+    	else {
+    		throw new NoSuchElementException();
+    	}
+     
     }
 
     /**
@@ -73,7 +109,13 @@ public class Catalog {
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
         // TODO: some code goes here
-        return null;
+    	if(catalogTable.containsKey(tableid)) {
+    		DbFile db = catalogTable.get(tableid).file;
+    		return db.getTupleDesc();
+    	}
+    	else {
+    		throw new NoSuchElementException();
+    	}
     }
 
     /**
@@ -84,27 +126,44 @@ public class Catalog {
      */
     public DbFile getDbFile(int tableid) throws NoSuchElementException {
         // TODO: some code goes here
-        return null;
+    	if(catalogTable.containsKey(tableid)) {
+    		return catalogTable.get(tableid).file;
+    	}
+    	else {
+    		throw new NoSuchElementException();
+    	}
     }
 
     public String getPrimaryKey(int tableid) {
         // TODO: some code goes here
-        return null;
+    	if(catalogTable.containsKey(tableid)) {
+    		return catalogTable.get(tableid).pkeyField;
+    	}
+    	else {
+    		throw new NoSuchElementException();
+    	}
     }
 
     public Iterator<Integer> tableIdIterator() {
         // TODO: some code goes here
-        return null;
+        return idTable.values().iterator();
     }
 
     public String getTableName(int id) {
         // TODO: some code goes here
-        return null;
+    	if(catalogTable.containsKey(id)) {
+    		return catalogTable.get(id).name;
+    	}
+    	else {
+    		throw new NoSuchElementException();
+    	}
     }
     
     /** Delete all tables from the catalog */
     public void clear() {
         // TODO: some code goes here
+    	catalogTable.clear();
+    	idTable.clear();
     }
     
     /**
