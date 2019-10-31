@@ -107,8 +107,7 @@ public class HeapFile implements DbFile {
 
 	// see DbFile.java for javadocs
 	public void writePage(Page page) throws IOException {
-		// some code goes here
-		// not necessary for proj1
+		  // TODO: some code goes here
 	}
 
 	/**
@@ -124,17 +123,17 @@ public class HeapFile implements DbFile {
 	// see DbFile.java for javadocs
 	public ArrayList<Page> insertTuple(TransactionId tid, Tuple t)
 		throws DbException, IOException, TransactionAbortedException {
-			// some code goes here
+		 // TODO: some code goes here
 			return null;
-			// not necessary for proj1
+			
 		}
 
 	// see DbFile.java for javadocs
 	public Page deleteTuple(TransactionId tid, Tuple t) throws DbException,
 		   TransactionAbortedException {
-			   // some code goes here
+		// TODO: some code goes here
 			   return null;
-			   // not necessary for proj1
+			
 		   }
 
 	// see DbFile.java for javadocs
@@ -257,5 +256,7 @@ public class HeapFile implements DbFile {
 
 		}
 	}
+
+  
 }
 

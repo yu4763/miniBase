@@ -13,6 +13,7 @@ import java.util.Hashtable;
  * locks to read/write the page.
  */
 public class BufferPool {
+
 	/** Bytes per page, including header. */
 	public static final int PAGE_SIZE = 4096;
 
@@ -84,7 +85,7 @@ public class BufferPool {
 	 */
 	public  void releasePage(TransactionId tid, PageId pid) {
 		// some code goes here
-		// not necessary for proj1
+		//  not necessary for proj3
 	}
 
 	/**
@@ -94,13 +95,13 @@ public class BufferPool {
 	 */
 	public void transactionComplete(TransactionId tid) throws IOException {
 		// some code goes here
-		// not necessary for proj1
+		// not necessary for proj3
 	}
 
 	/** Return true if the specified transaction has a lock on the specified page */
 	public boolean holdsLock(TransactionId tid, PageId p) {
 		// some code goes here
-		// not necessary for proj1
+		// not necessary for proj3
 		return false;
 	}
 
@@ -114,7 +115,7 @@ public class BufferPool {
 	public void transactionComplete(TransactionId tid, boolean commit)
 		throws IOException {
 			// some code goes here
-			// not necessary for proj1
+			// not necessary for proj3
 		}
 
 	/**
@@ -133,9 +134,10 @@ public class BufferPool {
 	 */
 	public void insertTuple(TransactionId tid, int tableId, Tuple t)
 		throws DbException, IOException, TransactionAbortedException {
-			// some code goes here
-			// not necessary for proj1
-		}
+		 // TODO: some code goes here
+		// hint: you also have to call insertTuple function of HeapFile,
+		// hint2: you don't have to consider about transaction ID write right now, (this maybe needed when implementing lab5 or lab6)
+	    }
 
 	/**
 	 * Remove the specified tuple from the buffer pool.
@@ -152,8 +154,7 @@ public class BufferPool {
 	 */
 	public  void deleteTuple(TransactionId tid, Tuple t)
 		throws DbException, TransactionAbortedException {
-			// some code goes here
-			// not necessary for proj1
+		// TODO: some code goes here
 		}
 
 	/**
@@ -163,7 +164,7 @@ public class BufferPool {
 	 */
 	public synchronized void flushAllPages() throws IOException {
 		// some code goes here
-		// not necessary for proj1
+		// not necessary for proj3
 
 	}
 
@@ -174,7 +175,7 @@ public class BufferPool {
 	 */
 	public synchronized void discardPage(PageId pid) {
 		// some code goes here
-		// not necessary for proj1
+		// not necessary for proj3
 	}
 
 	/**
@@ -183,14 +184,14 @@ public class BufferPool {
 	 */
 	private synchronized  void flushPage(PageId pid) throws IOException {
 		// some code goes here
-		// not necessary for proj1
+		// not necessary for proj3
 	}
 
 	/** Write all pages of the specified transaction to disk.
 	 */
 	public synchronized  void flushPages(TransactionId tid) throws IOException {
 		// some code goes here
-		// not necessary for proj1
+		// not necessary for proj3
 	}
 
 	/**
@@ -199,7 +200,7 @@ public class BufferPool {
 	 */
 	private synchronized  void evictPage() throws DbException {
 		// some code goes here
-		// not necessary for proj1
+		// not necessary for proj3
 	}
 
 }
