@@ -1,5 +1,8 @@
 package minibase;
 
+import java.io.IOException;
+
+
 /**
  * Inserts tuples read from the child operator into the tableid specified in the
  * constructor
@@ -7,6 +10,11 @@ package minibase;
 public class Insert extends Operator {
 
     private static final long serialVersionUID = 1L;
+    private int tableId;
+    private DbIterator child;
+    private DbIterator[] children;
+    private TransactionId tid;
+    private int recordscnt;
 
     /**
      * Constructor.
@@ -24,24 +32,47 @@ public class Insert extends Operator {
     public Insert(TransactionId t,DbIterator child, int tableid)
             throws DbException {
         // TODO: some code goes here
+    	
+    	tid = t;
+    	tableId = tableid;
+    	this.child = child;
+    	recordscnt = 0;
+    	
+    	children = new DbIterator[1];
+    	children[0] = child;
+    	
+    	
     }
 
     public TupleDesc getTupleDesc() {
         // TODO: some code goes here
-        return null;
+    	
+    	Catalog c = Database.getCatalog();
+    	HeapFile file = (HeapFile) c.getDbFile(tableId);
+    
+        return file.td;
     }
 
     public void open() throws DbException, TransactionAbortedException {
         // TODO some code goes here
 	// hint: you have to consider parent class as well
+    	
+    	recordscnt = 0;
+    	child.open();
+    	
     }
 
     public void close() {
         // TODO: some code goes here
+    	
+    	child.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // TODO: some code goes here
+    	
+    	recordscnt = 0;
+    	child.rewind();
     }
 
     /**
@@ -60,18 +91,49 @@ public class Insert extends Operator {
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // TODO: some code goes here
 	// hint: insert Tuples passed by iterator (child) to Buffer.
-        return null;
+    	
+
+    	if(recordscnt > 0)
+    		return null;
+    	
+		BufferPool b = Database.getBufferPool();
+		
+		while(child.hasNext()) {
+			Tuple item = child.next();
+			if(!item.getTupleDesc().equals(getTupleDesc()))
+				throw new DbException("");
+			
+			try {
+				b.insertTuple(tid, tableId, item);
+				recordscnt++;
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+		Type []type = new Type[1];
+		type[0] = Type.INT_TYPE;
+		TupleDesc td = new TupleDesc(type);
+		
+		Tuple tuple = new Tuple(td);
+		
+		tuple.setField(0, new IntField(recordscnt));
+		
+        return tuple;
     }
 
     @Override
     public DbIterator[] getChildren() {
         // TODO: some code goes here
 	// hint! there is only one element you can pass through DbIterator[]
-        return null;
+    	return children;
     }
 
     @Override
     public void setChildren(DbIterator[] children) {
         // TODO: some code goes here
+    	this.children = children;
+    	
     }
 }

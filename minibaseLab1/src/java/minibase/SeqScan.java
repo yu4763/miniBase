@@ -2,6 +2,8 @@ package minibase;
 
 import java.util.*;
 
+import minibase.TupleDesc.TDItem;
+
 /**
  * SeqScan is an implementation of a sequential scan access method that reads
  * each tuple of a table in no particular order (e.g., as they are laid out on
@@ -10,6 +12,11 @@ import java.util.*;
 public class SeqScan implements DbIterator {
 
     private static final long serialVersionUID = 1L;
+    private TransactionId tid;
+    int tableid;
+    String tableAlias;
+    HeapFile file;
+    DbFileIterator iterator;
 
     /**
      * Creates a sequential scan over the specified table as a part of the
@@ -29,6 +36,14 @@ public class SeqScan implements DbIterator {
      */
     public SeqScan(TransactionId tid, int tableid, String tableAlias) {
         // TODO: some code goes here
+    	this.tid = tid;
+    	this.tableid = tableid;
+    	this.tableAlias = tableAlias;
+    	
+    	Catalog c = Database.getCatalog();
+		this.file = (HeapFile) c.getDbFile(tableid);
+		
+    	this.iterator = file.iterator(tid);
     }
 
     /**
@@ -38,7 +53,10 @@ public class SeqScan implements DbIterator {
      * */
     public String getTableName() {
 	// TODO 
-        return null;
+    	Catalog c = Database.getCatalog();
+		String name = c.getTableName(tableid);
+		
+        return name;
     }
     
     /**
@@ -47,7 +65,8 @@ public class SeqScan implements DbIterator {
     public String getAlias()
     {
         // TODO: some code goes here
-        return null;
+    	
+        return tableAlias;
     }
 
     /**
@@ -64,6 +83,11 @@ public class SeqScan implements DbIterator {
      */
     public void reset(int tableid, String tableAlias) {
         // TODO: some code goes here
+    	
+    	this.tableid = tableid;
+    	this.tableAlias = tableAlias;
+    	
+    	
     }
 
     public SeqScan(TransactionId tid, int tableid) {
@@ -73,6 +97,7 @@ public class SeqScan implements DbIterator {
     public void open() throws DbException, TransactionAbortedException {
         // TODO: some code goes here
 	// hint! to implement sequential scan you need to access the Database Fil
+    	this.iterator.open();
     }
 
     /**
@@ -86,26 +111,56 @@ public class SeqScan implements DbIterator {
      */
     public TupleDesc getTupleDesc() {
         // TODO: some code goes here
-        return null;
+    	
+    	Catalog c = Database.getCatalog();
+		HeapFile file = (HeapFile) c.getDbFile(tableid);
+		TupleDesc td = file.getTupleDesc();
+		Iterator<TDItem> it = td.iterator();
+		
+		String prefix = this.tableAlias;
+		if(prefix == null) {
+			prefix = "null";
+		}
+	
+		ArrayList<Type> types = new ArrayList<Type>();
+		ArrayList<String> names = new ArrayList<String>();
+		
+		while(it.hasNext()) {
+			TDItem item = it.next();
+			types.add(item.fieldType);
+			
+			if(item.fieldName == null) {
+				names.add(prefix+".null");
+			}
+			else {
+				names.add(prefix+"."+item.fieldName);
+			}
+			
+		}
+		
+		
+        return new TupleDesc( (Type[]) types.toArray(), (String []) names.toArray());
     }
 
     public boolean hasNext() throws TransactionAbortedException, DbException {
         // TODO: some code goes here
-        return false;
+        return iterator.hasNext();
     }
 
     public Tuple next() throws NoSuchElementException,
             TransactionAbortedException, DbException {
         // TODO: some code goes here
-        return null;
+        return iterator.next();
     }
 
     public void close() {
         // TODO: some code goes here
+    	iterator.close();
     }
 
     public void rewind() throws DbException, NoSuchElementException,
             TransactionAbortedException {
         // TODO: some code goes here
+    	iterator.rewind();
     }
 }
