@@ -13,6 +13,7 @@ public class Delete extends Operator {
     private DbIterator child;
     private DbIterator[] children;
     private int recordscnt;
+    private boolean complete = false;
     
 
     // hint: implementation of Delete.java is not that much different from implementing Insert.java.
@@ -43,17 +44,21 @@ public class Delete extends Operator {
 
     public void open() throws DbException, TransactionAbortedException {
         // TODO: some code goes here
+    	super.open();
     	child.open();
+    	complete = false;
     }
 
     public void close() {
         // TODO: some code goes here
+    	super.close();
     	child.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // TODO: some code goes here
     	child.rewind();
+    	complete = false;
     }
 
     /**
@@ -67,6 +72,9 @@ public class Delete extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // TODO: some code goes here
+    	
+    	if(complete)
+    		return null;
     	
     	BufferPool b = Database.getBufferPool();
 		
@@ -84,6 +92,8 @@ public class Delete extends Operator {
 		Tuple tuple = new Tuple(td);
 		
 		tuple.setField(0, new IntField(recordscnt));
+		
+		complete = true;
 		
         return tuple;
 		

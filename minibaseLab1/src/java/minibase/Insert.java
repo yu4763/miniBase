@@ -15,6 +15,7 @@ public class Insert extends Operator {
     private DbIterator[] children;
     private TransactionId tid;
     private int recordscnt;
+    private boolean complete = false;
 
     /**
      * Constructor.
@@ -58,13 +59,15 @@ public class Insert extends Operator {
 	// hint: you have to consider parent class as well
     	
     	recordscnt = 0;
+    	super.open();
     	child.open();
+    	complete = false;
     	
     }
 
     public void close() {
         // TODO: some code goes here
-    	
+    	super.close();
     	child.close();
     }
 
@@ -73,6 +76,7 @@ public class Insert extends Operator {
     	
     	recordscnt = 0;
     	child.rewind();
+    	complete = false;
     }
 
     /**
@@ -93,7 +97,7 @@ public class Insert extends Operator {
 	// hint: insert Tuples passed by iterator (child) to Buffer.
     	
 
-    	if(recordscnt > 0)
+    	if(complete)
     		return null;
     	
 		BufferPool b = Database.getBufferPool();
@@ -119,6 +123,8 @@ public class Insert extends Operator {
 		Tuple tuple = new Tuple(td);
 		
 		tuple.setField(0, new IntField(recordscnt));
+		
+		complete = true;
 		
         return tuple;
     }

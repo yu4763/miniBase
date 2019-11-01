@@ -251,15 +251,18 @@ public class HeapFile implements DbFile {
 			if (iter.hasNext())
 				return true;
 
-			if (count < numPages) {
+			while (count < numPages) {
 				count++;
 				page = (HeapPage) Database.getBufferPool().getPage(tid, new HeapPageId(tableId, count - 1),
 						Permissions.READ_ONLY);
 				iter = page.iterator();
-				return true;
-
+				if(iter.hasNext()) {
+					return true;
+				}
+					
 			}
 
+		
 			return false;
 		}
 

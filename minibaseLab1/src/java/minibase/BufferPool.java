@@ -30,7 +30,7 @@ public class BufferPool {
 	// hint!! we need to match pid and page, So that we need additional data
 	// structure.
 	private int numPages;
-	private Hashtable<PageId, Page> pageTable;
+	private LruCache<PageId, Page> cache;
 
 	/**
 	 * Creates a BufferPool that caches up to numPages pages.
@@ -40,7 +40,7 @@ public class BufferPool {
 	public BufferPool(int numPages) {
 		// TODO: some code goes here
 		this.numPages = numPages;
-		pageTable = new Hashtable<PageId, Page>();
+		cache = new LruCache<PageId, Page>(numPages);
 	}
 
 	/**
@@ -61,16 +61,20 @@ public class BufferPool {
 		// TODO: some code goes here
 		// hint, reture value can't be null as if there is no matching page, we will add
 		// new page to the buffer pool.
+		
 
-		if (pageTable.containsKey(pid)) {
-			return pageTable.get(pid);
+		if (cache.isCached(pid)) {
+			return cache.get(pid);
 		}
 
 		Catalog c = Database.getCatalog();
 		HeapFile hf = (HeapFile) c.getDbFile(pid.getTableId());
 		Page p = hf.readPage(pid);
-
-		pageTable.put(pid, p);
+		boolean complete = cache.put(pid, p);
+		if(!complete) {
+			this.evictPage();
+			cache.put(pid, p);
+		}
 
 		return p;
 
@@ -88,6 +92,8 @@ public class BufferPool {
 	public void releasePage(TransactionId tid, PageId pid) {
 		// some code goes here
 		// not necessary for proj3
+		
+
 	}
 
 	/**
@@ -104,6 +110,7 @@ public class BufferPool {
 	public boolean holdsLock(TransactionId tid, PageId p) {
 		// some code goes here
 		// not necessary for proj3
+		
 		return false;
 	}
 
@@ -147,7 +154,11 @@ public class BufferPool {
 
 		while (it.hasNext()) {
 			Page page = it.next();
-			pageTable.put(page.getId(), page);
+			boolean complete = cache.put(page.getId(), page);
+			if(!complete) {
+				this.evictPage();
+				cache.put(page.getId(), page);
+			}
 		}
 
 	}
@@ -174,8 +185,13 @@ public class BufferPool {
 		HeapFile file = (HeapFile) c.getDbFile(tableid);
 
 		Page p = file.deleteTuple(tid, t);
+		
+		boolean complete = cache.put(pid, p);
+		if(!complete) {
+			this.evictPage();
+			cache.put(pid, p);
+		}
 
-		pageTable.put(pid, p);
 
 	}
 
@@ -186,6 +202,16 @@ public class BufferPool {
 	public synchronized void flushAllPages() throws IOException {
 		// some code goes here
 		// not necessary for proj3
+		
+		Iterator<Page> it = cache.iterator();
+		while(it.hasNext()) {
+			Page p = it.next();
+			TransactionId tid = p.isDirty();
+			if(tid != null) {
+				flushPage(p.getId());
+			}
+		}
+		
 
 	}
 
@@ -197,6 +223,8 @@ public class BufferPool {
 	public synchronized void discardPage(PageId pid) {
 		// some code goes here
 		// not necessary for proj3
+		
+		cache.remove(pid);
 	}
 
 	/**
@@ -207,6 +235,10 @@ public class BufferPool {
 	private synchronized void flushPage(PageId pid) throws IOException {
 		// some code goes here
 		// not necessary for proj3
+		
+		Catalog c = Database.getCatalog();
+		HeapFile file = (HeapFile) c.getDbFile(pid.getTableId());
+		file.writePage(cache.get(pid));
 	}
 
 	/**
@@ -215,6 +247,16 @@ public class BufferPool {
 	public synchronized void flushPages(TransactionId tid) throws IOException {
 		// some code goes here
 		// not necessary for proj3
+		
+		Iterator<Page> it = cache.iterator();
+		while(it.hasNext()) {
+			Page p = it.next();
+			TransactionId t = p.isDirty();
+			if(tid.equals(t)) {
+				flushPage(p.getId());
+			}
+		}
+		
 	}
 
 	/**
@@ -224,6 +266,23 @@ public class BufferPool {
 	private synchronized void evictPage() throws DbException {
 		// some code goes here
 		// not necessary for proj3
+		Page p = cache.evict();
+		TransactionId tid = p.isDirty();
+		
+		if(tid!=null) {
+			
+			try {
+				this.flushPages(tid);
+				cache.remove(p.getId());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+		else {
+			this.discardPage(p.getId());
+		}
 	}
 
 }
