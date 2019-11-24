@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from disk.
@@ -31,6 +32,8 @@ public class BufferPool {
 	// structure.
 	private int numPages;
 	private LruCache<PageId, Page> cache;
+	
+	private LockManager lockMng;
 
 	/**
 	 * Creates a BufferPool that caches up to numPages pages.
@@ -41,6 +44,7 @@ public class BufferPool {
 		// TODO: some code goes here
 		this.numPages = numPages;
 		cache = new LruCache<PageId, Page>(numPages);
+		lockMng = new LockManager();
 	}
 
 	/**
@@ -61,6 +65,8 @@ public class BufferPool {
 		// TODO: some code goes here
 		// hint, reture value can't be null as if there is no matching page, we will add
 		// new page to the buffer pool.
+		
+		lockMng.requestLock(tid, pid, perm);
 		
 
 		if (cache.isCached(pid)) {
@@ -93,6 +99,8 @@ public class BufferPool {
 		// some code goes here
 		// not necessary for proj3
 		
+		lockMng.releaseLock(tid, pid);
+		
 
 	}
 
@@ -104,6 +112,10 @@ public class BufferPool {
 	public void transactionComplete(TransactionId tid) throws IOException {
 		// some code goes here
 		// not necessary for proj3
+		
+		transactionComplete(tid, true);
+		
+		
 	}
 
 	/** Return true if the specified transaction has a lock on the specified page */
@@ -111,7 +123,7 @@ public class BufferPool {
 		// some code goes here
 		// not necessary for proj3
 		
-		return false;
+		return lockMng.holdsLock(tid, p);
 	}
 
 	/**
@@ -124,6 +136,12 @@ public class BufferPool {
 	public void transactionComplete(TransactionId tid, boolean commit) throws IOException {
 		// some code goes here
 		// not necessary for proj3
+		
+		lockMng.releaseAllPages(tid);
+		if (commit) {
+			flushPages(tid);
+		} 
+	
 	}
 
 	/**
@@ -210,6 +228,7 @@ public class BufferPool {
 			if(tid != null) {
 				flushPage(p.getId());
 			}
+			
 		}
 		
 
@@ -235,7 +254,6 @@ public class BufferPool {
 	private synchronized void flushPage(PageId pid) throws IOException {
 		// some code goes here
 		// not necessary for proj3
-		
 		Catalog c = Database.getCatalog();
 		HeapFile file = (HeapFile) c.getDbFile(pid.getTableId());
 		file.writePage(cache.get(pid));
@@ -252,7 +270,7 @@ public class BufferPool {
 		while(it.hasNext()) {
 			Page p = it.next();
 			TransactionId t = p.isDirty();
-			if(tid.equals(t)) {
+			if(t!=null && tid.equals(t)) {
 				flushPage(p.getId());
 			}
 		}

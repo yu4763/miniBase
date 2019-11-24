@@ -331,15 +331,17 @@ public class TestUtil {
         }
 
         public void run() {
-            try {
+            try {           
                 Database.getBufferPool().getPage(tid, pid, perm);
                 synchronized(alock) {
                     acquired = true;
-                }
+                }              
             } catch (Exception e) {
                 e.printStackTrace();
                 synchronized(elock) {
                     error = e;
+                    System.out.println("error");
+                    System.out.println(e);
                 }
 
                 try {

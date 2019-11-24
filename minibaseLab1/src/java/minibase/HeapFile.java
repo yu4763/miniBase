@@ -107,8 +107,6 @@ public class HeapFile implements DbFile {
 		
 		RandomAccessFile rf;
 		long position = (long) BufferPool.PAGE_SIZE * page.getId().pageNumber();
-		
-
 		rf = new RandomAccessFile(file.getAbsolutePath(), "rw");
 		rf.seek(position);
 		
@@ -123,7 +121,7 @@ public class HeapFile implements DbFile {
 	public int numPages() {
 		// TODO: some code goes here
 		// hint!! you can calculate number of pages as you know PAGE_SIZE
-		int num = (int) (file.length() / BufferPool.PAGE_SIZE);
+		int num = (int) Math.ceil(file.length() / BufferPool.PAGE_SIZE);
 		return num;
 	}
 
@@ -134,29 +132,38 @@ public class HeapFile implements DbFile {
 
 		ArrayList<Page> pages = new ArrayList<Page>();
 		boolean inserted = false;
+		BufferPool bf = Database.getBufferPool();
 
 		int n = numPages();
+		
+		
 		for (int i = 0; i < n; i++) {
 			HeapPageId pid = new HeapPageId(getId(), i);
-			HeapPage page = (HeapPage) Database.getBufferPool().getPage(tid, pid, Permissions.READ_WRITE);
+			HeapPage page = (HeapPage) bf.getPage(tid, pid, Permissions.READ_WRITE);
+			//System.out.println(page.getNumEmptySlots());
 			if (page.getNumEmptySlots() != 0) {
 				page.insertTuple(t);
+				page.markDirty(true, tid);
 				pages.add(page);
 				inserted = true;
+			
 				break;
 			}
 		}
 		
 		if(!inserted) {
+		
 			HeapPageId pid = new HeapPageId(getId(), n);
 			byte [] bytes = new byte[BufferPool.PAGE_SIZE];
-			HeapPage page = new HeapPage(pid, bytes);
-			writePage(page);
-			page = (HeapPage) Database.getBufferPool().getPage(tid, pid, Permissions.READ_WRITE);
+			HeapPage page = new HeapPage(pid, bytes);			
+			writePage(page);			
+			page = (HeapPage) bf.getPage(tid, pid, Permissions.READ_WRITE);
 			page.insertTuple(t);
+			page.markDirty(true, tid);
 			pages.add(page);
 		}
 			
+		bf.transactionComplete(tid);
 			
 		return pages;
 
@@ -167,6 +174,7 @@ public class HeapFile implements DbFile {
 		// TODO: some code goes here
 
 		RecordId rid = t.getRecordId();
+		BufferPool bf = Database.getBufferPool();
 
 		if (rid == null)
 			throw new DbException("");
@@ -176,8 +184,15 @@ public class HeapFile implements DbFile {
 		if (pid == null | pid.getTableId() != getId())
 			throw new DbException("");
 
-		HeapPage page = (HeapPage) Database.getBufferPool().getPage(tid, pid, Permissions.READ_WRITE);
+		HeapPage page = (HeapPage) bf.getPage(tid, pid, Permissions.READ_WRITE);
 		page.deleteTuple(t);
+		page.markDirty(true, tid);
+		try {
+			bf.transactionComplete(tid);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return page;
 
 	}
