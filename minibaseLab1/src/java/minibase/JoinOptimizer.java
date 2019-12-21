@@ -111,7 +111,7 @@ public class JoinOptimizer {
             // HINT: You may need to use the variable "j" if you implemented
             // a join algorithm that's more complicated than a basic nested-loops
             // join.
-            return -1.0;
+            return cost1 + card1*cost2 + card1*card2;
         }
     }
 
@@ -156,6 +156,19 @@ public class JoinOptimizer {
             Map<String, Integer> tableAliasToId) {
         int card = 1;
         // some code goes here
+        
+        if(joinOp == Predicate.Op.EQUALS) {
+            if (t1pkey && !t2pkey) {
+                card = card1;
+            } else if (!t1pkey && t2pkey) {
+                card = card2;
+            } else {
+                card = card1 > card2? card1 : card2;
+            }
+        }else{
+            card =(int)(0.3*card1*card2);
+        }
+        
         return card <= 0 ? 1 : card;
     }
 
@@ -221,8 +234,36 @@ public class JoinOptimizer {
         // should work.
 
         // some code goes here
-        //Replace the following
-        return joins;
+    	
+    	
+    	 PlanCache cache = new PlanCache();
+         Set<LogicalJoinNode> joinsets = new HashSet<LogicalJoinNode>(joins);
+         
+         int len = joinsets.size();
+         for (int i=1; i<=len; i++){
+        	 Set<Set<LogicalJoinNode>> subsets = enumerateSubsets(joins, i);
+             for (Set<LogicalJoinNode> set : subsets) {
+                 CostCard best = new CostCard();
+                 best.cost = Double.MAX_VALUE;
+                 best.card = Integer.MAX_VALUE;
+                 for (LogicalJoinNode s : set) {
+                     CostCard plan = computeCostAndCardOfSubplan(stats, filterSelectivities,s,set,best.cost,cache);
+                     if (plan.cost < best.cost) {
+                         best = plan;
+                     }
+                 }
+                 cache.addPlan(set,best.cost,best.card,best.plan);
+             }
+         }
+         
+         Vector<LogicalJoinNode> best = cache.getOrder(joinsets);
+
+         if (explain) {
+             printJoins(best,cache,stats,filterSelectivities);
+         }
+         
+         return best;
+         
     }
 
     // ===================== Private Methods =================================
