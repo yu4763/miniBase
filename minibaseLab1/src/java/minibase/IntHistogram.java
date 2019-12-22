@@ -52,8 +52,15 @@ public class IntHistogram {
 	public void addValue(int v) {
 		// some code goes here
 		int index = (v - this.min) / this.width;
+		
+		if(index < 0)
+			index = 0;
+		else if (index >= numBuckets)
+			index = numBuckets -1;
+		
 		this.buckets[index]++;
 		numTuples++;
+		
 	}
 
 	/**

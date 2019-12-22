@@ -66,34 +66,49 @@ public class LockManager {
 	 */
 	public void requestLock(TransactionId tid, PageId pid, Permissions perm) throws TransactionAbortedException {
 			
-		if(holdsLock(tid,pid)) {
+		
+		if(holdsLock(tid, pid)) {
 			
 			pageLock lock = lockTable.get(pid);
-			if(lock instanceof SharedLock) {
+			if(lock instanceof ExclusiveLock) {
+				return;
+			}
+			
+			else {
 				
 				SharedLock sl = (SharedLock) lock;
-				lock.unlock(tid);
-				if(sl.lockCounts() == 0) {
-					lock = new ExclusiveLock(tid);
+				if(perm == Permissions.READ_ONLY) {
+					return;
 				}
 				else {
 					
-					sl.state = STATE.WAITING;
-					waitTableEx.computeIfAbsent(pid, k -> new ArrayList<ExclusiveLock>());
-					
-					ExclusiveLock el = new ExclusiveLock(tid);
-					waitTableEx.get(pid).add(el);
-					
-					while(waitTableEx.containsKey(pid) && waitTableEx.get(pid).contains(el)) {
-						try {
-							Thread.sleep(50);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+					lock.unlock(tid);
+					if(sl.lockCounts() == 0) {
+						lock = new ExclusiveLock(tid);
+					}
+					else {
+						
+						sl.state = STATE.WAITING;
+						waitTableEx.computeIfAbsent(pid, k -> new ArrayList<ExclusiveLock>());
+						
+						ExclusiveLock el = new ExclusiveLock(tid);
+						waitTableEx.get(pid).add(el);
+						
+						while(waitTableEx.containsKey(pid) && waitTableEx.get(pid).contains(el)) {
+							try {
+								Thread.sleep(50);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								Thread.currentThread().interrupt();
+							}
 						}
+						
 					}
 					
 				}
+				
+				
+				
 			}
 			
 			return;
@@ -137,7 +152,7 @@ public class LockManager {
 								Thread.sleep(50);
 							} catch (InterruptedException e) {
 								// TODO Auto-generated catch block
-								e.printStackTrace();
+								Thread.currentThread().interrupt();
 							}
 						}
 							
@@ -159,7 +174,7 @@ public class LockManager {
 							Thread.sleep(50);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
-							e.printStackTrace();
+							Thread.currentThread().interrupt();
 						}
 					}
 					
@@ -185,7 +200,7 @@ public class LockManager {
 							Thread.sleep(50);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
-							e.printStackTrace();
+							Thread.currentThread().interrupt();
 						}
 						
 					}
@@ -203,7 +218,7 @@ public class LockManager {
 							Thread.sleep(50);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
-							e.printStackTrace();
+							Thread.currentThread().interrupt();
 						}
 					}
 					
@@ -227,7 +242,7 @@ public class LockManager {
 				lockTable.put(pid, new ExclusiveLock(tid));
 			}
 			
-			
+
 			
 		}
 			
@@ -275,16 +290,11 @@ public class LockManager {
 					waitTableEx.remove(pid);
 				}
 				
-				
-				notifyAll();
 			}
 			else if(waitTableSh.contains(pid)) {
 				
 				lock = waitTableSh.get(pid);
 				waitTableSh.remove(pid);
-				
-				notifyAll();
-				
 				
 			}
 			else {
@@ -304,8 +314,7 @@ public class LockManager {
 						if(waitTableEx.get(pid).size() == 0 ) {
 							waitTableEx.remove(pid);
 						}
-						
-						notifyAll();
+
 					}
 					
 					

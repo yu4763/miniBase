@@ -248,7 +248,7 @@ public class JoinOptimizer {
                  best.card = Integer.MAX_VALUE;
                  for (LogicalJoinNode s : set) {
                      CostCard plan = computeCostAndCardOfSubplan(stats, filterSelectivities,s,set,best.cost,cache);
-                     if (plan.cost < best.cost) {
+                     if (plan!=null && plan.cost < best.cost) {
                          best = plan;
                      }
                  }

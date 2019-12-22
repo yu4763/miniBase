@@ -63,8 +63,6 @@ public class Catalog {
         // TODO: some code goes here
     	CatalogItem item = new CatalogItem(file, name, pkeyField);
     	int id = file.getId();
-    	if(catalogTable.containsKey(id))
-    		return;
     	catalogTable.put(id, item);
     	if(name != null) {
     		idTable.put(name, id);
@@ -72,6 +70,7 @@ public class Catalog {
     }
 
     public void addTable(DbFile file, String name) {
+    	
         addTable(file, name, "");
     }
 
@@ -92,6 +91,7 @@ public class Catalog {
      */
     public int getTableId(String name) throws NoSuchElementException {
         // TODO: some code goes here
+    	
     	if(name != null && idTable.containsKey(name)) {
     		return idTable.get(name);
     	}

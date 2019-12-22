@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.sun.xml.internal.ws.org.objectweb.asm.Type;
 
 /**
  * TableStats represents statistics (e.g., histograms) about base tables in a
@@ -98,6 +97,7 @@ public class TableStats {
     	
     	Catalog c = Database.getCatalog();
     	this.file = (HeapFile) c.getDbFile(tableid);
+    	
     	this.td = this.file.getTupleDesc();
     	this.costPerPage = ioCostPerPage;
     	int n = td.numFields();
@@ -116,13 +116,18 @@ public class TableStats {
     	DbFileIterator iter = file.iterator(tid);
     	int numFields = this.td.numFields();
     	
+    	
     	int numTuples = 0;
     	
+    	
     	try {
+    		
+    		iter.open();
+    		
 			while(iter.hasNext()) {
 				Tuple t = iter.next();
 				numTuples++;
-				
+			
 				for (int i = 0; i < numFields; i++) {
 					
 					Field f = t.getField(i);
@@ -158,6 +163,7 @@ public class TableStats {
     	
     	this.numTuples = numTuples;
     	this.makeHistogram();
+    
     }
     
     public void makeHistogram() {
@@ -236,7 +242,7 @@ public class TableStats {
 	 */
 	public int estimateTableCardinality(double selectivityFactor) {
 		// some code goes here
-		return  (int) (this.numTuples*selectivityFactor);
+		return  (int) Math.ceil(this.numTuples*selectivityFactor);
 	}
 
 	/**
